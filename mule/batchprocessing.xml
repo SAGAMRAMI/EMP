@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="27b2294f-2c55-4f3e-898a-42284941a4a6" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="batchprocessingFlow" doc:id="00e55ab2-c753-40a2-9f11-d53f5668137d" >
+		<http:listener doc:name="Listener" doc:id="6363171c-4595-4789-8ea8-ea469f3d53fa" config-ref="HTTP_Listener_config" path="/Batchprocessing"/>
+		<ee:transform doc:name="Transform Message" doc:id="894a2307-43dd-4901-ab44-1e9cec09424f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+1 to 10]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<batch:job jobName="batchprocessingBatch_Job" doc:id="3597e4cd-f09b-4c7f-bf41-aac66f6de877" >
+			<batch:process-records >
+				<batch:step name="Processingthe-Numbers" doc:id="cda22996-d124-4790-a71d-b9776c21c9a9" >
+					<logger level="INFO" doc:name="Logger" doc:id="ccf6c115-1b1e-464f-bc90-2005591151ae" message="*** inside the numbers ****"/>
+					<ee:transform doc:name="Transform Message" doc:id="ea334730-8d5e-48ff-8621-c3ee715b88b7" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"numbers $(payload)"]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<round-robin doc:name="Round Robin" doc:id="b98d6c60-1c1f-4fae-8c54-d3aed1a9c934" tracking:enable-default-events="true">
+						<route >
+							<logger level="INFO" doc:name="Logger" doc:id="e5c70813-40fd-4a73-8102-6b1453e10f7f" message="** all ***"/>
+						</route>
+						<route >
+							<raise-error doc:name="Raise error" doc:id="230a26bb-675a-4037-aa08-9b1eb5e8b3a1" type="customer arsie error"/>
+						</route>
+					</round-robin>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Logger" doc:id="cd38b9fa-4ba9-40a6-9e7b-b93852478f7d" message="* i am in On complete step"/>
+			</batch:on-complete>
+		</batch:job>
+	</flow>
+</mule>
